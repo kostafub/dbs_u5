@@ -1,7 +1,10 @@
+#!/usr/local/bin/python
+# -*- coding: utf-8 -*-
+
 # imports
 from bs4 import BeautifulSoup
 import requests
-import csv
+from operator import itemgetter
 
 # this function returns a soup page object
 def getPage(url):
@@ -10,31 +13,39 @@ def getPage(url):
     spobj = BeautifulSoup(data, "lxml")
     return spobj
 
-# scraper website: (https://www.heise.de/thema/https
+# scraper website: heise.de
 def main():
 
-    fobj = open('heise.csv', 'w')      # open file
-    csvw = csv.writer(fobj, delimiter = ';')      # create csv writer, set delimiter to ;
+    d = {}   # create a dictionary
 
-	h_https_url = "https://www.heise.de/thema/https"
+    for page in range(1,5,1):
 
-        content = getPage(h_https_url).find("header")
+        # all https topics
+        heise_https_url = "https://www.heise.de/thema/https?seite=" + str(page)
 
-        for c in content:
-            c = c.findAll("td")
-            txt = []
-            for t in c:
-                txt.append(t.text.encode('utf-8'))
-            csvw.writerow(txt)
-            #print(txt)
+        # https topics
+        content = getPage(heise_https_url).find("div", {"class":"keywordliste"})
+        content = content.findAll("header")
 
+        # split wordlist into words
+        for line in content:
+            linetxt = line.text.encode('utf-8')
+            wordlist = linetxt.split()
 
-    fobj.close()                                # close file
-    print("\nDONE !\n\n\nheise.de was scraped completely.\n")
+            # store all words with appearances in dictionary
+            for word in wordlist:
+                if not d.has_key(word):
+                    d[word] = 1
+                if d.has_key(word):
+                    d[word] = d[word]+1
 
+    print("\nDONE !\n\nTopic https on heise.de was scraped completely.\n")
+
+    # print top 3 words of dictionary
+    sorted(d.items(), key=itemgetter(1), reverse=True)
+    print(map(itemgetter(0), sorted(d.items(), key=itemgetter(1), reverse=True))[9])
 
 
 # main program
-
 if __name__ == '__main__':
-    main()
+main()
